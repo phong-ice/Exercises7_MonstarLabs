@@ -51,6 +51,7 @@ class MainActivity : AppCompatActivity() {
                             withContext(Dispatchers.Main){
                                 val intent = Intent(this@MainActivity,Home::class.java)
                                 startActivity(intent)
+                                finish()
                             }
                         }
                     }

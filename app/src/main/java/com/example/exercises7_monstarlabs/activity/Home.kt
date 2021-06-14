@@ -42,6 +42,7 @@ import com.example.exercises7_monstarlabs.helper.Utils.PLAY_MODE_SHUFFLE
 import com.example.exercises7_monstarlabs.model.MyAudio
 import com.example.exercises7_monstarlabs.service.AudioService
 import kotlinx.coroutines.*
+import java.util.*
 import kotlin.random.Random
 
 class Home : AppCompatActivity(), CommunicationAdapterAudio {
@@ -81,12 +82,13 @@ class Home : AppCompatActivity(), CommunicationAdapterAudio {
             binding.constraintLayout.visibility = View.GONE
         }
         binding.btnPlayAll.setOnClickListener {
-            val lastPosition =  _position
-           _position = 0
+            val lastPosition = _position
+            _position = 0
             localMyAudio = audios[_position]
             adapterAudio.getItemSelected(localMyAudio.id)
             adapterAudio.notifyItemChanged(lastPosition)
             adapterAudio.notifyItemChanged(_position)
+            binding.minimize.visibility = View.VISIBLE
             onPlayAudio()
         }
         binding.btnDown.setOnClickListener {
@@ -123,21 +125,25 @@ class Home : AppCompatActivity(), CommunicationAdapterAudio {
         binding.edtSearch.addTextChangedListener {
             CoroutineScope(Dispatchers.IO).launch {
                 val pattern = it.toString()
-                Log.i("test123","$pattern - before")
                 delay(500)
-                Log.i("test123","$pattern - after")
                 audios.clear()
-                for (audio in audiosBackup){
-                    when{
-                        audio.name.contains(pattern)  -> {
+                for (audio in audiosBackup) {
+                    when {
+                        audio.name.toLowerCase(Locale.getDefault()).contains(
+                            pattern.toLowerCase(
+                                Locale.getDefault()
+                            )
+                        ) -> {
                             audios.add(audio)
-                           withContext(Dispatchers.Main){
-                               adapterAudio.notifyDataSetChanged()
-                           }
+                            withContext(Dispatchers.Main) {
+                                binding.lvAudio.recycledViewPool.clear()
+                                adapterAudio.notifyDataSetChanged()
+                            }
                         }
                         pattern == "" -> {
                             audios.addAll(audiosBackup)
-                            withContext(Dispatchers.Main){
+                            withContext(Dispatchers.Main) {
+                                binding.lvAudio.recycledViewPool.clear()
                                 adapterAudio.notifyDataSetChanged()
                             }
                         }
@@ -204,12 +210,12 @@ class Home : AppCompatActivity(), CommunicationAdapterAudio {
                 localMyAudio = audios[_position]
                 onPlayAudio()
                 adapterAudio.getItemSelected(localMyAudio.id)
-                adapterAudio.notifyItemChanged(_position -1 )
+                adapterAudio.notifyItemChanged(_position - 1)
                 adapterAudio.notifyItemChanged(_position)
                 binding.btnPlayMinimize.setImageResource(R.drawable.ic_baseline_pause_24)
             }
             else -> {
-                when(PLAY_MODE_MY_AUDIO){
+                when (PLAY_MODE_MY_AUDIO) {
                     PLAY_MODE_REPEAT_ALL -> {
                         _position = 0
                         localMyAudio = audios[_position]
@@ -219,11 +225,8 @@ class Home : AppCompatActivity(), CommunicationAdapterAudio {
                         onPlayAudio()
                     }
                     PLAY_MODE_NORMAL -> {
-                        onPauseAudio()
-                        CoroutineScope(Dispatchers.Default).launch {
-                            delay(1000)
-                            coroutineSendBroadcast.cancel(null)
-                        }
+                        binding.btnPlayMinimize.setImageResource(R.drawable.ic_baseline_play_arrow_24)
+                        sendNotification()
                     }
                 }
             }
@@ -258,11 +261,11 @@ class Home : AppCompatActivity(), CommunicationAdapterAudio {
                 ACTION_PREVIOUS -> onPreviousAudio()
                 ACTION_CHANGED_PROGRESS -> {
                     val process = intent.getIntExtra(MY_PROGRESS, 0)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         coroutineSendBroadcast.cancel(null)
-                        mediaPlayer?.seekTo((process*1000).toLong(),MediaPlayer.SEEK_CLOSEST)
+                        mediaPlayer?.seekTo((process * 1000).toLong(), MediaPlayer.SEEK_CLOSEST)
                         sendMyBroadcast()
-                    }else{
+                    } else {
                         coroutineSendBroadcast.cancel(null)
                         mediaPlayer?.seekTo(process)
                         sendMyBroadcast()
@@ -292,14 +295,14 @@ class Home : AppCompatActivity(), CommunicationAdapterAudio {
                 intent.putExtra(NAME_AUDIO, localMyAudio.name)
                 intent.putExtra(CURRENT_AUDIO, mediaPlayer!!.currentPosition / 1000)
                 intent.putExtra(DURATION_AUDIO, mediaPlayer!!.duration / 1000)
-                intent.putExtra("isPlay",mediaPlayer?.isPlaying)
-                if ((mediaPlayer!!.currentPosition / 1000) == (mediaPlayer!!.duration / 1000)){
-                    when(PLAY_MODE_MY_AUDIO){
+                intent.putExtra("isPlay", mediaPlayer?.isPlaying)
+                if ((mediaPlayer!!.currentPosition / 1000) == (mediaPlayer!!.duration / 1000)) {
+                    when (PLAY_MODE_MY_AUDIO) {
                         PLAY_MODE_SHUFFLE -> {
                             val lastPosition = _position
-                            _position = Random.nextInt(0,audios.size)
+                            _position = Random.nextInt(0, audios.size)
                             localMyAudio = audios[_position]
-                            withContext(Dispatchers.Main){
+                            withContext(Dispatchers.Main) {
                                 adapterAudio.getItemSelected(localMyAudio.id)
                                 adapterAudio.notifyItemChanged(_position)
                                 adapterAudio.notifyItemChanged(lastPosition)
@@ -311,9 +314,10 @@ class Home : AppCompatActivity(), CommunicationAdapterAudio {
                             onPlayAudio()
                         }
                         else -> {
-                           withContext(Dispatchers.Main){
-                               onNextAudio()
-                           }
+                            withContext(Dispatchers.Main) {
+                                cancel(null)
+                                onNextAudio()
+                            }
                         }
                     }
                 }
@@ -394,5 +398,11 @@ class Home : AppCompatActivity(), CommunicationAdapterAudio {
         stopService(Intent(this@Home, AudioService::class.java))
         mediaPlayer?.stop()
         mediaPlayer?.release()
+    }
+
+    override fun onBackPressed() {
+        if (supportFragmentManager.backStackEntryCount < 2){
+            finish()
+        }
     }
 }

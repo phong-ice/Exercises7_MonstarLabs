@@ -47,7 +47,6 @@ class AudioService:Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val bundle = intent?.extras
         val name = bundle?.getString("nameAudio")
-        Log.i("test123","${bundle?.getBoolean("isPlay")}")
         when(bundle?.getBoolean("isPlay")){
             true -> {
                 drawablePlay = R.drawable.ic_baseline_pause_24
