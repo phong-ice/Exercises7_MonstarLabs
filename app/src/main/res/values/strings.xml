@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Exercises7_MonstarLabs</string>
+    <string name="search">Search</string>
+    <string name="name_song_test">Hiện đại</string>
+    <string name="artist_song_test">Khắc việt</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+</resources>

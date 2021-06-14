@@ -1,0 +1,2 @@
+rootProject.name = "Exercises7_MonstarLabs"
+include ':app'
